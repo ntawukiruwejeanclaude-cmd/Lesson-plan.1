@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Multi-Company Employee System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;background:#f2f4f8;margin:0}
+header{background:#0b5ed7;color:white;padding:15px;text-align:center}
+.container{max-width:1100px;margin:auto;background:white;padding:20px}
+input,select,button{padding:10px;width:100%;margin:5px 0}
+button{background:#0b5ed7;color:white;border:none}
+button:hover{background:#084298}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ccc;padding:8px}
+th{background:#e9ecef}
+.hidden{display:none}
+.danger{background:red}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1 id="title">Multi-Company Employee System</h1>
+<button onclick="langSwitch()">EN / RW</button>
+</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login">
+<h2 id="loginT">Login</h2>
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p><b>Super Admin:</b> admin / 1234</p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash" class="hidden">
+
+<h2 id="dashT">Dashboard</h2>
+
+<!-- COMPANY -->
+<h3 id="companyT">Add Company</h3>
+<input id="companyName" placeholder="Company Name">
+<button onclick="addCompany()">Add Company</button>
+
+<select id="companySelect" onchange="loadEmployees()"></select>
+
+<hr>
+
+<!-- EMPLOYEE -->
+<h3 id="empT">Add Employee</h3>
+<input id="empName" placeholder="Employee Name">
+<input id="empRole" placeholder="Role">
+<select id="empStatus">
+<option>Active</option>
+<option>Inactive</option>
+</select>
+<button onclick="addEmployee()">Add Employee</button>
+
+<input id="search" placeholder="Search employee..." onkeyup="searchEmp()">
+
+<table>
+<thead>
+<tr>
+<th>Name</th><th>Role</th><th>Status</th><th>Action</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
+
+<button onclick="exportCSV()">Export Excel</button>
+<button onclick="aiReport()">AI Analysis</button>
+<p id="ai"></p>
+
+</div>
+</div>
+
+<script>
+let lang="en";
+let data=JSON.parse(localStorage.getItem("system"))||{companies:[]};
+
+function save(){localStorage.setItem("system",JSON.stringify(data));}
+
+function login(){
+if(user.value==="admin"&&pass.value==="1234"){
+login.style.display="none";
+dash.classList.remove("hidden");
+loadCompanies();
+}else alert("Wrong login");
+}
+
+function addCompany(){
+if(companyName.value==="")return;
+data.companies.push({name:companyName.value,employees:[]});
+companyName.value="";
+save();loadCompanies();
+}
+
+function loadCompanies(){
+companySelect.innerHTML="";
+data.companies.forEach((c,i)=>{
+companySelect.innerHTML+=`<option value="${i}">${c.name}</option>`;
+});
+loadEmployees();
+}
+
+function addEmployee(){
+let i=companySelect.value;
+if(!empName.value||!empRole.value)return;
+data.companies[i].employees.push({
+name:empName.value,role:empRole.value,status:empStatus.value
+});
+empName.value="";empRole.value="";
+save();loadEmployees();
+}
+
+function loadEmployees(list){
+let i=companySelect.value;
+let emps=list||data.companies[i].employees;
+table.innerHTML="";
+emps.forEach((e,idx)=>{
+table.innerHTML+=`
+<tr>
+<td>${e.name}</td><td>${e.role}</td><td>${e.status}</td>
+<td><button class="danger" onclick="delEmp(${idx})">Delete</button></td>
+</tr>`;
+});
+}
+
+function delEmp(i){
+let c=companySelect.value;
+data.companies[c].employees.splice(i,1);
+save();loadEmployees();
+}
+
+function searchEmp(){
+let k=search.value.toLowerCase();
+let c=companySelect.value;
+let f=data.companies[c].employees.filter(e=>e.name.toLowerCase().includes(k));
+loadEmployees(f);
+}
+
+function exportCSV(){
+let c=companySelect.value;
+let csv="Name,Role,Status\n";
+data.companies[c].employees.forEach(e=>csv+=`${e.name},${e.role},${e.status}\n`);
+download(csv,"employees.csv");
+}
+
+function aiReport(){
+let c=companySelect.value;
+let emps=data.companies[c].employees;
+let a=emps.filter(e=>e.status==="Active").length;
+ai.innerText=`AI Report: ${a}/${emps.length} employees are active.`;
+}
+
+function download(d,f){
+let a=document.createElement("a");
+a.href="data:text/plain,"+encodeURIComponent(d);
+a.download=f;a.click();
+}
+
+function langSwitch(){
+if(lang==="en"){
+title.innerText="Sisitemu y’Ibigo byinshi";
+loginT.innerText="Kwinjira";
+dashT.innerText="Ahakorerwa";
+companyT.innerText="Ongeramo Ikigo";
+empT.innerText="Ongeramo Umukozi";
+lang="rw";
+}else location.reload();
+}
+</script>
+
+</body>
+</html>
